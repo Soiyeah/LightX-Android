@@ -13,6 +13,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -26,20 +27,20 @@ import java.util.UUID;
 public class MainActivity extends Activity {
 
     ToggleButton led1,led2,led3,led4,led5,led6;
+    TextView txt_connected;    // connection status
     private final String DEVICE_NAME="LightX";
     private final String DEVICE_ADDRESS="98:D3:32:30:E4:31";
-    private final UUID PORT_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");//Serial Port Service ID
+    private final UUID PORT_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");   //Serial Port Service ID
     private BluetoothDevice device;
     private BluetoothSocket socket;
-    private OutputStream outputStream;
+    private OutputStream outputStream;      // Currently not in use
     private InputStream inputStream;
     boolean deviceConnected = false;
-    TextView textView;
-    EditText editText;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setTheme(R.style.AppTheme);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -49,14 +50,76 @@ public class MainActivity extends Activity {
         led4 = findViewById(R.id.btn4);
         led5 = findViewById(R.id.btn5);
         led6 = findViewById(R.id.btn6);
-        textView = findViewById(R.id.textView2);
-        textView.setMovementMethod(new ScrollingMovementMethod());
-        editText = findViewById(R.id.editText);
+        txt_connected = findViewById(R.id.txt_connected);
+
+        ((RadioGroup) findViewById(R.id.toggleGroup)).setOnCheckedChangeListener(ToggleListener);
+
 
         beginStart();
 
+        if(!deviceConnected)        // disable buttons if not connected
+        {
+            disableButtons();
+            txt_connected.setText("Couldn't connect to LightX");
+            //txt_connected.setTextColor();
+        }
+        else
+        {
+            txt_connected.setText("Connected to LightX");
+        }
+
     }
 
+
+    public void disableButtons()
+    {
+        led1.setEnabled(false);
+        led2.setEnabled(false);
+        led3.setEnabled(false);
+        led4.setEnabled(false);
+        led5.setEnabled(false);
+        led6.setEnabled(false);
+    }
+
+    public void enableButtons()
+    {
+        led1.setEnabled(true);
+        led2.setEnabled(true);
+        led3.setEnabled(true);
+        led4.setEnabled(true);
+        led5.setEnabled(true);
+        led6.setEnabled(true);
+    }
+
+    static final RadioGroup.OnCheckedChangeListener ToggleListener = new RadioGroup.OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(final RadioGroup radioGroup, final int i) {
+            for (int j = 0; j < radioGroup.getChildCount(); j++) {
+                final ToggleButton view = (ToggleButton) radioGroup.getChildAt(j);
+                view.setChecked(view.getId() == i);
+            }
+        }
+    };
+
+
+    public void modeManual(View view) {                               // Control leds manually
+        ((RadioGroup)view.getParent()).check(view.getId());
+
+        if(deviceConnected)
+        {
+            enableButtons();
+        }
+        Toast.makeText(getApplicationContext(),"manual mode",Toast.LENGTH_SHORT).show();
+
+    }
+
+    public void modeMsync(View view) {                              // Sync leds with music
+        ((RadioGroup)view.getParent()).check(view.getId());
+
+        disableButtons();
+        Toast.makeText(getApplicationContext(),"m sync mode",Toast.LENGTH_SHORT).show();
+
+    }
 
     public void btnLed1(View view) // control led 1
     {
@@ -99,7 +162,6 @@ public class MainActivity extends Activity {
             }
         });
     }
-
 
     public void btnLed4(View view) // control led 4
     {
@@ -144,7 +206,7 @@ public class MainActivity extends Activity {
     }
 
 
-    public boolean BTinit()
+    public boolean BTinit()         // initialise Bluetooth.
     {
         boolean found = false;
         BluetoothAdapter bluetoothAdapter=BluetoothAdapter.getDefaultAdapter();
@@ -232,10 +294,10 @@ public class MainActivity extends Activity {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        textView.append("\nSent Data:"+str+"\n");
+       // textView.append("\nSent Data:"+str+"\n");
     }
 
-
+/*
     public void onClickSend(View view)
     {
         String string = editText.getText().toString();
@@ -245,8 +307,9 @@ public class MainActivity extends Activity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        textView.append("\nSent Data:"+string+"\n");
+      //  textView.append("\nSent Data:"+string+"\n");
     }
+*/
 
     public void onClickStop(View view) throws IOException
     {
@@ -254,7 +317,7 @@ public class MainActivity extends Activity {
         inputStream.close();
         socket.close();
         deviceConnected=false;
-        textView.append("\nConnection Closed!\n");
+      //  textView.append("\nConnection Closed!\n");
 
     }
 
